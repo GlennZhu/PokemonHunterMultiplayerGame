@@ -171,7 +171,9 @@ public class ConnectMessageVisitor extends DataPacketAlgo<DataPacket<? extends I
 					Class<?> index, DataPacket<IConnectMessage> host,
 					Object... params) {
 				IChatroomInviteMessage invite = (IChatroomInviteMessage) host.getData();
-				boolean accept = ((ChatroomManager)params[0]).sendInvitePrompt(invite.getChatroomID(), (IUser)params[1]);
+//				boolean accept = ((ChatroomManager)params[0]).sendInvitePrompt(invite.getChatroomID(), (IUser)params[1]);
+				// Default accepting any invite
+				boolean accept = true;
 				ChatroomManager manager = ((ChatroomManager)params[0]);
 				if(accept){
 					manager.joinRoom(invite);

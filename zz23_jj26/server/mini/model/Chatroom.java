@@ -234,8 +234,13 @@ public class Chatroom implements IChatroom {
 								IChatroomAdapter adpt = (IChatroomAdapter) params[0];
 								String text = ((ITextMessage) host.getData())
 										.getText();
-								miniview.printToView(adpt.getUser().toString()
+								IUser thisUser = adpt.getUser();
+								miniview.printToView(thisUser.toString()
 										+ ": " + text);
+								if (text.equals("START")){
+									sendTextMessage(thisUser + " requested to start the game. Starting...please wait");
+									sendStartGame();
+								}
 								return new DataPacket<INullMessage>(
 										INullMessage.class,
 										NullMessage.SINGLETON);
@@ -664,7 +669,7 @@ public class Chatroom implements IChatroom {
 			
 		};
 		Timer myTimer = new Timer();
-		myTimer.schedule(myTimerTask, 60000L);
+		myTimer.schedule(myTimerTask, 30000L);
 	}
 	
 	

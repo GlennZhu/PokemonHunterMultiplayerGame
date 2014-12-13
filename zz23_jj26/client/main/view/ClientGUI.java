@@ -125,11 +125,7 @@ public class ClientGUI extends JFrame {
 				if(e.getKeyChar() == '\n'){
 					String name = txtUsername.getText().trim();
 					if(!name.matches("\\s*")){
-						model.setName(txtUsername.getText());
-						btnSetName.setEnabled(false);
-						btnConnect.setEnabled(true);
-						btnGetRooms.setEnabled(true);
-						btnMakeRoom.setEnabled(true);
+						setNameAction();
 					}
 				}
 			}
@@ -141,11 +137,7 @@ public class ClientGUI extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				String name = txtUsername.getText().trim();
 				if(!name.matches("\\s*")){
-					model.setName(txtUsername.getText());
-					btnSetName.setEnabled(false);
-					btnConnect.setEnabled(true);
-					btnGetRooms.setEnabled(true);
-					btnMakeRoom.setEnabled(true);
+					setNameAction();
 				}
 			}
 		});
@@ -255,6 +247,7 @@ public class ClientGUI extends JFrame {
 		gbc_btnJoin.insets = new Insets(0, 0, 5, 0);
 		gbc_btnJoin.gridx = 1;
 		gbc_btnJoin.gridy = 3;
+		btnJoin.setEnabled(false);
 		btnJoin.setToolTipText("Ask to join the selected chatroom.");
 		btnJoin.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -357,6 +350,19 @@ public class ClientGUI extends JFrame {
 	private void connect() {
 		append("Connecting...\n");
 		append(model.connectTo(txtIPAddress.getText())+"\n");
+	}
+	
+	/**
+	 * What happens when you click the button to set name
+	 */
+	private void setNameAction(){
+		model.setName(txtUsername.getText());
+		btnSetName.setEnabled(false);
+		btnConnect.setEnabled(true);
+		btnGetRooms.setEnabled(true);
+		btnMakeRoom.setEnabled(true);
+		btnInvite.setEnabled(true);
+		btnJoin.setEnabled(true);
 	}
 	
 	/**
