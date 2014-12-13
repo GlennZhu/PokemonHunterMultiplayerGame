@@ -9,9 +9,11 @@ public class GameOver implements IChatMessage{
 	private static final long serialVersionUID = 3259553953170285595L;
 
 	private HashMap<String, Integer> scoreBoard;
+	private String winningTeam;
 	
-	public GameOver(HashMap<String, Integer> scoreBoard){
+	public GameOver(HashMap<String, Integer> scoreBoard, String winningTeam){
 		this.setScoreBoard(scoreBoard);
+		this.setWinningTeam(winningTeam);
 	}
 
 	public HashMap<String, Integer> getScoreBoard() {
@@ -20,6 +22,14 @@ public class GameOver implements IChatMessage{
 
 	private void setScoreBoard(HashMap<String, Integer> scoreBoard) {
 		this.scoreBoard = scoreBoard;
+	}
+
+	public String getWinningTeam() {
+		return winningTeam;
+	}
+
+	private void setWinningTeam(String winningTeam) {
+		this.winningTeam = winningTeam;
 	}
 	
 }

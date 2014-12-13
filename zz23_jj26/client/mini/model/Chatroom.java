@@ -132,6 +132,7 @@ public class Chatroom implements IChatroom {
 			IMiniModel2MainModelAdapter adapterToMe2) {
 		this.id = id;
 		meUser = me;
+		adapterToMe = makeAdapterToMe();
 		chatVisitor = new AExtVisitor<DataPacket<? extends IChatMessage>, Class<?>, IChatroomAdapter, ADataPacket>(
 				new ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, Object, IChatroomAdapter>() {
 
@@ -146,13 +147,10 @@ public class Chatroom implements IChatroom {
 						IChatroomAdapter sendingAdpt = (IChatroomAdapter) params[0];
 						try {
 							DataPacket<? extends IChatMessage>	cmdMsg = sendingAdpt.sendChatroomMessage(
-									new DataPacket<IRequestCmdMessage>(
-											IRequestCmdMessage.class,
-											new RequestCmdMessage(index)),
-											adapterToMe);
+									new DataPacket<IRequestCmdMessage>(IRequestCmdMessage.class, 
+											new RequestCmdMessage(index)), adapterToMe);
 							System.out.println("here");
-							ISendCmdMessage sendCmdMsg = (ISendCmdMessage) cmdMsg
-									.getData();
+							ISendCmdMessage sendCmdMsg = (ISendCmdMessage) cmdMsg.getData();
 							ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, ?, IChatroomAdapter> cmd = sendCmdMsg
 									.getCmd();
 							System.out.println("Setting local cmd adapter");
@@ -292,7 +290,6 @@ public class Chatroom implements IChatroom {
 //		chatVisitor.setCmd(IUnknownTest.class, new UnknownTestCmd(cmdAdapter));
 //		chatVisitor.setCmd(IStartGame.class, new StartGameCmd(cmdAdapter));
 
-		adapterToMe = makeAdapterToMe();
 		this.miniview = miniview;
 		adapterToMain = adapterToMe2;
 	}

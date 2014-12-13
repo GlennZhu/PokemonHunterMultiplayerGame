@@ -8,6 +8,7 @@ import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.imageio.ImageIO;
 
 import zz23_jj26.server.cmd.AddScoreCmd;
+import zz23_jj26.server.cmd.GameOverCmd;
 import zz23_jj26.server.cmd.IExtendedCmdAdapter;
 import zz23_jj26.server.cmd.RemovePokemonCmd;
 import zz23_jj26.server.cmd.StartGameCmd;
@@ -113,6 +115,8 @@ public class Chatroom implements IChatroom {
 	private IMiniModel2MainModelAdapter adapterToMain;
 	
 	private HashMap<IChatroomAdapter, Integer> scoreBoard = new HashMap<IChatroomAdapter, Integer>();
+	
+	private HashMap<String, ArrayList<IChatroomAdapter>> teams = new HashMap<String, ArrayList<IChatroomAdapter>>();
 	/**
 	 * command to this model adapter
 	 */
@@ -170,6 +174,13 @@ public class Chatroom implements IChatroom {
 		this.id = id;
 		meUser = me;
 		adapterToMe = makeAdapterToMe();
+		
+		// Set up 4 teams
+		teams.put("RED TEAM", new ArrayList<IChatroomAdapter>());
+		teams.put("BLUE TEAM", new ArrayList<IChatroomAdapter>());
+		teams.put("YELLOW TEAM", new ArrayList<IChatroomAdapter>());
+		teams.put("GREEN TEAM", new ArrayList<IChatroomAdapter>());
+		
 		chatVisitor = new AExtVisitor<DataPacket<? extends IChatMessage>, Class<?>, IChatroomAdapter, ADataPacket>(
 				new ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, Object, IChatroomAdapter>() {
 
@@ -186,12 +197,9 @@ public class Chatroom implements IChatroom {
 									new DataPacket<IRequestCmdMessage>(IRequestCmdMessage.class,
 											new RequestCmdMessage(index)), adapterToMe);
 							ISendCmdMessage sendCmdMsg = (ISendCmdMessage) cmdMsg.getData();
-							ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, ?, IChatroomAdapter> cmd = sendCmdMsg
-									.getCmd();
-							System.out.println("Setting local cmd adapter");
+							ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, ?, IChatroomAdapter> cmd = sendCmdMsg.getCmd();
 							cmd.setCmd2ModelAdpt(cmdAdapter);
-							chatVisitor.setCmd(sendCmdMsg.getCmdID(),
-									sendCmdMsg.getCmd());
+							chatVisitor.setCmd(sendCmdMsg.getCmdID(), sendCmdMsg.getCmd());
 						} catch (RemoteException e) {
 							e.printStackTrace();
 						}
@@ -332,6 +340,7 @@ public class Chatroom implements IChatroom {
 		chatVisitor.setCmd(IStartGame.class, new StartGameCmd(cmdAdapter));
 		chatVisitor.setCmd(RemovePokemon.class, new RemovePokemonCmd(cmdAdapter));
 		chatVisitor.setCmd(AddScore.class, new AddScoreCmd(cmdAdapter));
+		chatVisitor.setCmd(GameOver.class, new GameOverCmd(cmdAdapter));
 		chatVisitor.setCmd(IRequestRemovePokemon.class, 
 					new ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, IRequestRemovePokemon, IChatroomAdapter>() {
 						private static final long serialVersionUID = 361377945231880991L;
@@ -602,6 +611,10 @@ public class Chatroom implements IChatroom {
 		for (File file: listOfFiles){
 			if (file.isFile()){
 				BufferedImage img = null;
+				String fileName = file.getName();
+				if (!fileName.contains("png"))
+					continue;
+				
 				try {
 				    img = ImageIO.read(file);
 				    images.add(new SerializedImage(img));
@@ -614,7 +627,6 @@ public class Chatroom implements IChatroom {
 		
 		
 		Random rnd = new Random();
-		
 		ArrayList<RandomPosition> posList = new ArrayList<RandomPosition>();
 		
 		for (int i = 0; i < images.size(); i++){
@@ -624,33 +636,108 @@ public class Chatroom implements IChatroom {
 			posList.add(new RandomPosition(latiPos, longtiPos, offset));
 		}
 		
+		// Random Team
+		
+		for(int i = 0; i < adapters.size(); i++){
+			int caseNum = i%4;
+			switch(caseNum){
+			case 0: teams.get("RED TEAM").add(adapters.get(i));
+					break;
+			case 1: teams.get("BLUE TEAM").add(adapters.get(i));
+					break;
+			case 2: teams.get("YELLOW TEAM").add(adapters.get(i));
+					break;
+			case 3: teams.get("GREEN TEAM").add(adapters.get(i));
+					break;
+			default: break;
+			}
+		}
+		
+		
+		// Start Game
 		UUID useThisUUID = UUID.randomUUID();
 		System.out.println("start game message UUID " + useThisUUID);
-		IStartGame message = new StartGame(images, posList, useThisUUID);
 		
-		DataPacket<IStartGame> messagePacket = new DataPacket<IStartGame>(
-				IStartGame.class, message);
-		for (IChatroomAdapter adpt : adapters) {
-			// Instantiate a thread object
-			new Thread() {
-				public void run() {
-					try {
-						adpt.sendChatroomMessage(messagePacket, adapterToMe);
-					} catch (RemoteException e) {
-						e.printStackTrace();
+		sendTextMessage("The game contains several hundreds of Pokemon Images, it might take up to 1 min to load. \n"
+				+ "Please wait ...... \n"
+				+ "The purpose of the game is to catch as many Pokemons as you can within game time (5 min.) \n"
+				+ "Final score and the winning team will be annoced at the end.");
+		
+		for(Entry<String, ArrayList<IChatroomAdapter>> en: teams.entrySet()){
+			HashMap<String, ArrayList<IChatroomAdapter>> thisTeam = new HashMap<String, ArrayList<IChatroomAdapter>>();
+			thisTeam.put(en.getKey(), en.getValue());
+			IStartGame message = new StartGame(images, posList, useThisUUID, thisTeam);
+			DataPacket<IStartGame> messagePacket = new DataPacket<IStartGame>(IStartGame.class, message);
+			for (IChatroomAdapter c: en.getValue()){
+				new Thread() {
+					public void run() {
+						try {
+							c.sendChatroomMessage(messagePacket, adapterToMe);
+						} catch (RemoteException e) {
+							e.printStackTrace();
+						}
 					}
-				}
-			}.start();
+				}.start();
+			}
 		}
+		
+		
+//		IStartGame message = new StartGame(images, posList, useThisUUID, teams);
+//		
+//		DataPacket<IStartGame> messagePacket = new DataPacket<IStartGame>(
+//				IStartGame.class, message);
+//		for (IChatroomAdapter adpt : adapters) {
+//			// Instantiate a thread object
+//			new Thread() {
+//				public void run() {
+//					try {
+//						adpt.sendChatroomMessage(messagePacket, adapterToMe);
+//					} catch (RemoteException e) {
+//						e.printStackTrace();
+//					}
+//				}
+//			}.start();
+//		}
+		
+
+		
+		
+		
+		
+		// Timer and Game Over
 		TimerTask myTimerTask = new TimerTask(){
 
 			@Override
 			public void run() {
 				HashMap<String, Integer> finalScoreBoard= new HashMap<String, Integer>();
+				finalScoreBoard.put("RED TEAM", 0);
+				finalScoreBoard.put("BLUE TEAM", 0);
+				finalScoreBoard.put("YELLOW TEAM", 0);
+				finalScoreBoard.put("GREEN TEAM", 0);
+				// accumulating scores into teams
 				for(Entry<IChatroomAdapter, Integer> en: scoreBoard.entrySet()){
-					finalScoreBoard.put(en.getKey().getUser().toString(), en.getValue());
+					IChatroomAdapter thisPlayer = en.getKey();
+					if(teams.get("RED TEAM").contains(thisPlayer)){
+						finalScoreBoard.put("RED TEAM", finalScoreBoard.get("RED TEAM") + en.getValue());
+					} else if (teams.get("BLUE TEAM").contains(thisPlayer)){
+						finalScoreBoard.put("BLUE TEAM", finalScoreBoard.get("BLUE TEAM") + en.getValue());
+					} else if (teams.get("YELLOW TEAM").contains(thisPlayer)){
+						finalScoreBoard.put("YELLOW TEAM", finalScoreBoard.get("YELLOW TEAM") + en.getValue());
+					} else if (teams.get("GREEN TEAM").contains(thisPlayer)){
+						finalScoreBoard.put("GREEN TEAM", finalScoreBoard.get("GREEN TEAM") + en.getValue());
+					}
 				}
-				GameOver message = new GameOver(finalScoreBoard);
+				// find winner
+				String winningTeam = null;
+				int winningScore = 0;
+				for(Entry<String, Integer> en : finalScoreBoard.entrySet()){
+					if(en.getValue() > winningScore){
+							winningTeam = en.getKey();
+							winningScore = en.getValue();
+					}
+				}
+				
+				GameOver message = new GameOver(finalScoreBoard, winningTeam);
 				DataPacket<GameOver> gameOverMsgPacket = new DataPacket<GameOver>(
 						GameOver.class, message);
 				
@@ -669,7 +756,7 @@ public class Chatroom implements IChatroom {
 			
 		};
 		Timer myTimer = new Timer();
-		myTimer.schedule(myTimerTask, 30000L);
+		myTimer.schedule(myTimerTask, 180000L);
 	}
 	
 	

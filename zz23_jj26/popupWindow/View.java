@@ -28,6 +28,6 @@ public class View extends JFrame {
 	}
 	
 	public void addComponent(Component component){
-		addComponent(component);
+		add(component);
 	}
 }

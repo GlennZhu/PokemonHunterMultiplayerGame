@@ -80,7 +80,13 @@ public class Airspaces extends ApplicationTemplate{
             this.remove(layerPanel);
             statusPanel = new JPanel();
             statusPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-    		statusPanel.setSize(new Dimension(200,400));
+    		statusPanel.setSize(new Dimension(300,400));
+    		GridBagLayout gbl_statusPanel = new GridBagLayout();
+    		gbl_statusPanel.columnWidths = new int[]{64, 0};
+    		gbl_statusPanel.rowHeights = new int[]{16, 0, 0, 0};
+    		gbl_statusPanel.columnWeights = new double[]{1.0, Double.MIN_VALUE};
+    		gbl_statusPanel.rowWeights = new double[]{0.0, 0.0, 1.0, Double.MIN_VALUE};
+    		statusPanel.setLayout(gbl_statusPanel);
 //    		statusPanel.add(pnlWest);
             this.getContentPane().add(statusPanel, BorderLayout.WEST);
             this.pack();
@@ -98,7 +104,6 @@ public class Airspaces extends ApplicationTemplate{
         protected Airspace lastHighlit;
         protected AirspaceAttributes lastAttrs;
         protected Annotation lastAnnotation;
-        protected BasicDragger dragger;
         protected Map<Position, Renderable> images;
 
 
@@ -205,35 +210,15 @@ public class Airspaces extends ApplicationTemplate{
 
         public void initializeSelectionMonitoring()
         {
-            this.dragger = new BasicDragger(this.getWwd());
             this.getWwd().addSelectListener(new SelectListener()
             {
                 public void selected(SelectEvent event)
                 {
                     // Have rollover events highlight the rolled-over object.
-                    if (event.getEventAction().equals(SelectEvent.ROLLOVER) && !dragger.isDragging())
+                    if (event.getEventAction().equals(SelectEvent.ROLLOVER))
                     {
                         if (AirspacesController.this.highlight(event.getTopObject()))
                             AirspacesController.this.getWwd().redraw();
-                    }
-                    // Have drag events drag the selected object.
-                    else if (event.getEventAction().equals(SelectEvent.DRAG_END)
-                        || event.getEventAction().equals(SelectEvent.DRAG))
-                    {
-                        // Delegate dragging computations to a dragger.
-                        dragger.selected(event);
-
-                        // We missed any roll-over events while dragging, so highlight any under the cursor now,
-                        // or de-highlight the dragged shape if it's no longer under the cursor.
-                        if (event.getEventAction().equals(SelectEvent.DRAG_END))
-                        {
-                            PickedObjectList pol = AirspacesController.this.getWwd().getObjectsAtCurrentPosition();
-                            if (pol != null)
-                            {
-                                AirspacesController.this.highlight(pol.getTopObject());
-                                AirspacesController.this.getWwd().redraw();
-                            }
-                        }
                     }
                 }
             });

@@ -77,9 +77,7 @@ public class StartGameCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatM
 		MixedDataKey<IRequestRemovePokemon> removeKey = new MixedDataKey<IRequestRemovePokemon>(
 				key, "RequestRemoveMessage", IRequestRemovePokemon.class);
 		IMixedDataDictionary dict = cmdAdpt.getMixedDataDictionary();
-		Map<Position, Renderable> imageMap = new ConcurrentHashMap<Position, Renderable>();
-		System.out.println(dict == null);
-		System.out.println("Test test test");
+		Map<Position, Renderable> imageMap = new ConcurrentHashMap<Position, Renderable>();	
 		dict.put(removeKey,removeMsg);
 		// Worker thread
 		SwingUtilities.invokeLater(new Runnable() {  // Put this Runnable on the GUI event thread
@@ -105,7 +103,7 @@ public class StartGameCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatM
 			        if (Configuration.isMacOS()){
 			            System.setProperty("com.apple.mrj.application.apple.menu.about.name", appName);
 			        }
-                    DeepPicking dp = new DeepPicking(imageMap, params[0], cmdAdpt, key, dict);
+                    DeepPicking dp = new DeepPicking(imageMap, params[0], cmdAdpt, key, dict, host.getData().getTeams());
 			        AppFrame frame = dp.createAppFrame();
 		            frame.setTitle(appName);
 		            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

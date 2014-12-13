@@ -2,9 +2,11 @@ package zz23_jj26.server.message.game;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
 
 import zz23_jj26.server.earth.RandomPosition;
+import common.chatroom.IChatroomAdapter;
 import common.message.chat.IChatMessage;
 
 /**
@@ -33,5 +35,7 @@ public interface IStartGame extends IChatMessage{
 	public UUID getUUID();
 	
 	public ArrayList<RandomPosition> getPositions();
+	
+	public HashMap<String, ArrayList<IChatroomAdapter>> getTeams();
 		
 }
