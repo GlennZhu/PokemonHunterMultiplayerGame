@@ -139,6 +139,7 @@ public class ChatRoomGui extends JFrame {
 		panel.add(btnSubmit);
 		
 		smiliebutton = new JButton(":)");
+		smiliebutton.setEnabled(false);
 		smiliebutton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				model.sendSmilie();
@@ -148,6 +149,7 @@ public class ChatRoomGui extends JFrame {
 		panel.add(smiliebutton);
 		
 		btnStartGame = new JButton("Start Game");
+		btnStartGame.setEnabled(false);
 		btnStartGame.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				model.sendStartGame();

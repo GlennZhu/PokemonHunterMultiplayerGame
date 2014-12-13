@@ -15,9 +15,6 @@ import provided.datapacket.DataPacket;
 import provided.extvisitor.AExtVisitor;
 import provided.mixedData.IMixedDataDictionary;
 import provided.mixedData.MixedDataDictionary;
-import provided.mixedData.MixedDataKey;
-import zz23_jj26.client.cmd.StartGameCmd;
-import zz23_jj26.client.cmd.UnknownTestCmd;
 import zz23_jj26.client.engine.IRemoteTaskViewAdapter;
 import zz23_jj26.client.message.chat.IStartGame;
 import zz23_jj26.client.message.chat.IUnknownTest;
@@ -28,7 +25,6 @@ import zz23_jj26.client.message.chat.StartGame;
 import zz23_jj26.client.message.chat.TextMessage;
 import zz23_jj26.client.message.chat.UnknownTest;
 import zz23_jj26.client.userremote.IUserChatRemote;
-import zz23_jj26.server.cmd.IExtendedCmdAdapter;
 import common.ICmd2ModelAdapter;
 import common.chatroom.IChatroomAdapter;
 import common.chatroom.IChatroomID;
@@ -293,8 +289,8 @@ public class Chatroom implements IChatroom {
 							}
 						});
 
-		chatVisitor.setCmd(IUnknownTest.class, new UnknownTestCmd(cmdAdapter));
-		chatVisitor.setCmd(IStartGame.class, new StartGameCmd(cmdAdapter));
+//		chatVisitor.setCmd(IUnknownTest.class, new UnknownTestCmd(cmdAdapter));
+//		chatVisitor.setCmd(IStartGame.class, new StartGameCmd(cmdAdapter));
 
 		adapterToMe = makeAdapterToMe();
 		this.miniview = miniview;

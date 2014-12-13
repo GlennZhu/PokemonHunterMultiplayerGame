@@ -179,7 +179,7 @@ public class Chatroom implements IChatroom {
 					public DataPacket<? extends IChatMessage> apply(
 							Class<?> index, DataPacket<Object> host,
 							IChatroomAdapter... params) {
-						System.out.println("Received unknown message");
+						System.out.println("Received unknown message type " + index);
 						IChatroomAdapter sendingAdpt = (IChatroomAdapter) params[0];
 						try {
 							DataPacket<? extends IChatMessage>	cmdMsg = sendingAdpt.sendChatroomMessage(
@@ -664,7 +664,7 @@ public class Chatroom implements IChatroom {
 			
 		};
 		Timer myTimer = new Timer();
-		myTimer.schedule(myTimerTask, 5000L);
+		myTimer.schedule(myTimerTask, 60000L);
 	}
 	
 	

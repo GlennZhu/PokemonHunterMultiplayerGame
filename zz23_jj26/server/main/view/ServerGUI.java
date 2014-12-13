@@ -124,11 +124,7 @@ public class ServerGUI extends JFrame {
 				if(e.getKeyChar() == '\n'){
 					String name = txtUsername.getText().trim();
 					if(!name.matches("\\s*")){
-						model.setName(txtUsername.getText());
-						btnSetName.setEnabled(false);
-						btnConnect.setEnabled(true);
-						btnGetRooms.setEnabled(true);
-						btnMakeRoom.setEnabled(true);
+						setNameAction();
 					}
 				}
 			}
@@ -140,11 +136,7 @@ public class ServerGUI extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				String name = txtUsername.getText().trim();
 				if(!name.matches("\\s*")){
-					model.setName(txtUsername.getText());
-					btnSetName.setEnabled(false);
-					btnConnect.setEnabled(true);
-					btnGetRooms.setEnabled(true);
-					btnMakeRoom.setEnabled(true);
+					setNameAction();
 				}
 			}
 		});
@@ -169,9 +161,7 @@ public class ServerGUI extends JFrame {
 		btnConnect.setToolTipText("Connect to the specified IP.");
 		btnConnect.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
-				
 				connect();
-				btnInvite.setEnabled(true);
 			}
 		});
 		pnlControl.add(btnConnect);
@@ -254,6 +244,7 @@ public class ServerGUI extends JFrame {
 		gbc_btnJoin.insets = new Insets(0, 0, 5, 0);
 		gbc_btnJoin.gridx = 1;
 		gbc_btnJoin.gridy = 3;
+		btnJoin.setEnabled(false);
 		btnJoin.setToolTipText("Ask to join the selected chatroom.");
 		btnJoin.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -332,8 +323,8 @@ public class ServerGUI extends JFrame {
 		gbc_btnInvite.anchor = GridBagConstraints.WEST;
 		gbc_btnInvite.gridx = 1;
 		gbc_btnInvite.gridy = 8;
-		btnInvite.setToolTipText("Invite the currently selected connected user to the room.");
 		btnInvite.setEnabled(false);
+		btnInvite.setToolTipText("Invite the currently selected connected user to the room.");
 		btnInvite.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				IChatroomID roomToInviteTo = cbbMyChatrooms.getItemAt(cbbMyChatrooms.getSelectedIndex());
@@ -356,6 +347,19 @@ public class ServerGUI extends JFrame {
 	private void connect() {
 		append("Connecting...\n");
 		append(model.connectTo(txtIPAddress.getText())+"\n");
+	}
+	
+	/**
+	 * What happens when you click the button to set name
+	 */
+	private void setNameAction(){
+		model.setName(txtUsername.getText());
+		btnSetName.setEnabled(false);
+		btnConnect.setEnabled(true);
+		btnGetRooms.setEnabled(true);
+		btnMakeRoom.setEnabled(true);
+		btnInvite.setEnabled(true);
+		btnJoin.setEnabled(true);
 	}
 	
 	/**
@@ -427,7 +431,7 @@ public class ServerGUI extends JFrame {
 	}
 
 	/**
-	 * Respond to a room request with a option box
+	 * Send a room join invite with a option box
 	 * @param room - name of the room
 	 * @param name - name of the user that you want to invite
 	 * @return - true if accept. False otherwise.

@@ -316,6 +316,7 @@ public class ChatroomManager{
 	 * @param selecteduser - The user to ask
 	 */
 	public void askToJoinRoom(IChatroomID toJoin, IUser selecteduser) {
+		if (toJoin == null || selecteduser == null) return;
 		for (IChatroom rm : myRooms){
 			System.out.println(rm.getID().toString() + " " + toJoin.toString());
 			if (rm.getID().equals(toJoin)) return;
@@ -417,24 +418,24 @@ public class ChatroomManager{
 	 * @param roomToInviteTo - room to invite to
 	 */
 	public void inviteUserToRoom(IUser userToInvite, IChatroomID roomToInviteTo) {
+		if (userToInvite == null || roomToInviteTo == null) return;
+		IChatroom roomToJoin = null;
+		// Check if the user to be invited is already in my chatroom
 		for (IChatroom rm : myRooms){
-			if (rm.getID().equals(roomToInviteTo)){
+			IChatroomID thisRoomID = rm.getID();
+			if (thisRoomID.equals(roomToInviteTo)){
+				roomToJoin = rm;
 				List<IChatroomAdapter> adps = rm.getAdapters();
 				for (IChatroomAdapter c : adps){
 					if (c.getUser().equals(userToInvite)) return;
 				}
 			}
 		}
-		IChatroom room = null;
-		for(IChatroom rm: myRooms){
-			if(rm.getID().equals(roomToInviteTo)){
-				room = rm;
-			}
-		}
-		if(room == null){
+		// If there is no such room
+		if(roomToJoin == null){
 			return;
 		}
-		IChatroomInviteMessage invitemsg = new ChatroomInviteMessage(roomToInviteTo, room.getCopyAdapters()); 
+		IChatroomInviteMessage invitemsg = new ChatroomInviteMessage(roomToInviteTo, roomToJoin.getCopyAdapters()); 
 		DataPacket<IChatroomInviteMessage> packet = new DataPacket<IChatroomInviteMessage>(IChatroomInviteMessage.class, invitemsg);
 		try {
 			IConnectMessage returnMsg = userToInvite.sendMessage(packet, meUser).getData();
