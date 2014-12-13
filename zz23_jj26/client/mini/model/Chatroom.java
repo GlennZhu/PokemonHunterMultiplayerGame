@@ -14,6 +14,7 @@ import provided.datapacket.ADataPacketAlgoCmd;
 import provided.datapacket.DataPacket;
 import provided.extvisitor.AExtVisitor;
 import provided.mixedData.IMixedDataDictionary;
+import provided.mixedData.MixedDataDictionary;
 import provided.mixedData.MixedDataKey;
 import zz23_jj26.client.cmd.StartGameCmd;
 import zz23_jj26.client.cmd.UnknownTestCmd;
@@ -92,9 +93,11 @@ public class Chatroom implements IChatroom {
 	 */
 	private ICmd2ModelAdapter cmdAdapter = new ICmd2ModelAdapter() {
 		
+		private IMixedDataDictionary dict = new MixedDataDictionary();
+		
 		@Override
 		public IMixedDataDictionary getMixedDataDictionary() {
-			return null;
+			return dict;
 		}
 		
 		@Override
@@ -104,14 +107,16 @@ public class Chatroom implements IChatroom {
 		
 		@Override
 		public void addComponent(Component component, String string) {
-			//TODO: add string to it
+			component.setName(string);
 			miniview.addComponent(component);
 		}
 
 		@Override
 		public Window addComponentAsWindow(Component component, String label) {
-			// TODO Auto-generated method stub
-			return null;
+			zz23_jj26.popupWindow.View returnVal = new zz23_jj26.popupWindow.View();
+			component.setName(label);
+			returnVal.addComponent(component);
+			return returnVal;
 		}
 
 		@Override

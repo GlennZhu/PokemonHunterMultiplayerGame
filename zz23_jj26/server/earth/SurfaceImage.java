@@ -92,7 +92,7 @@ public class SurfaceImage extends WWObjectImpl
         this.setImageSource(imageSource, sector);
     }
 
-    public SurfaceImage(Object imageSource, Iterable<? extends LatLon> corners, UUID id)
+    public SurfaceImage(Object imageSource, Iterable<? extends LatLon> corners)
     {
         if (imageSource == null)
         {
@@ -108,7 +108,7 @@ public class SurfaceImage extends WWObjectImpl
             throw new IllegalArgumentException(message);
         }
 
-        this.id = id;
+//        this.id = id;
         this.setImageSource(imageSource, corners);
     }
 

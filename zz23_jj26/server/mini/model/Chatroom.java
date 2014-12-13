@@ -1,33 +1,56 @@
 package zz23_jj26.server.mini.model;
 
+import gov.nasa.worldwind.geom.Position;
+import gov.nasa.worldwind.render.Renderable;
+
 import java.awt.Component;
 import java.awt.Window;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.imageio.ImageIO;
+
+import zz23_jj26.server.cmd.AddScoreCmd;
 import zz23_jj26.server.cmd.IExtendedCmdAdapter;
+import zz23_jj26.server.cmd.RemovePokemonCmd;
 import zz23_jj26.server.cmd.StartGameCmd;
 import zz23_jj26.server.cmd.UnknownTestCmd;
+import zz23_jj26.server.earth.RandomPosition;
 import zz23_jj26.server.engine.IRemoteTaskViewAdapter;
-import zz23_jj26.server.message.chat.IStartGame;
+import zz23_jj26.server.main.model.SerializedImage;
 import zz23_jj26.server.message.chat.IUnknownTest;
 import zz23_jj26.server.message.chat.LeaveMessage;
 import zz23_jj26.server.message.chat.RequestCmdMessage;
 import zz23_jj26.server.message.chat.SendCmdMessage;
-import zz23_jj26.server.message.chat.StartGame;
 import zz23_jj26.server.message.chat.TextMessage;
 import zz23_jj26.server.message.chat.UnknownTest;
+import zz23_jj26.server.message.game.AddScore;
+import zz23_jj26.server.message.game.GameOver;
+import zz23_jj26.server.message.game.IRequestRemovePokemon;
+import zz23_jj26.server.message.game.IStartGame;
+import zz23_jj26.server.message.game.RemovePokemon;
+import zz23_jj26.server.message.game.StartGame;
 import zz23_jj26.server.userremote.IUserChatRemote;
 import provided.datapacket.ADataPacket;
 import provided.datapacket.ADataPacketAlgoCmd;
 import provided.datapacket.DataPacket;
 import provided.extvisitor.AExtVisitor;
 import provided.mixedData.IMixedDataDictionary;
+import provided.mixedData.MixedDataDictionary;
 import provided.mixedData.MixedDataKey;
 import common.ICmd2ModelAdapter;
 import common.chatroom.IChatroomAdapter;
@@ -88,14 +111,18 @@ public class Chatroom implements IChatroom {
 	 * Adapter to main model
 	 */
 	private IMiniModel2MainModelAdapter adapterToMain;
+	
+	private HashMap<IChatroomAdapter, Integer> scoreBoard = new HashMap<IChatroomAdapter, Integer>();
 	/**
 	 * command to this model adapter
 	 */
 	private ICmd2ModelAdapter cmdAdapter = new ICmd2ModelAdapter() {
 		
+		private IMixedDataDictionary dict = new MixedDataDictionary();
+		
 		@Override
 		public IMixedDataDictionary getMixedDataDictionary() {
-			return null;
+			return dict;
 		}
 		
 		@Override
@@ -105,13 +132,16 @@ public class Chatroom implements IChatroom {
 		
 		@Override
 		public void addComponent(Component component, String string) {
+			component.setName(string);
 			miniview.addComponent(component);
 		}
 
 		@Override
 		public Window addComponentAsWindow(Component component, String label) {
-			// TODO Auto-generated method stub
-			return null;
+			zz23_jj26.popupWindow.View returnVal = new zz23_jj26.popupWindow.View();
+			component.setName(label);
+			returnVal.addComponent(component);
+			return returnVal;
 		}
 
 		@Override
@@ -139,12 +169,11 @@ public class Chatroom implements IChatroom {
 			IMiniModel2MainModelAdapter adapterToMe2) {
 		this.id = id;
 		meUser = me;
-
+		adapterToMe = makeAdapterToMe();
 		chatVisitor = new AExtVisitor<DataPacket<? extends IChatMessage>, Class<?>, IChatroomAdapter, ADataPacket>(
 				new ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, Object, IChatroomAdapter>() {
 
-					private static final long serialVersionUID = 981230839366920892L;
-					
+					private static final long serialVersionUID = 981230839366920892L;		
 
 					@Override
 					public DataPacket<? extends IChatMessage> apply(
@@ -154,12 +183,9 @@ public class Chatroom implements IChatroom {
 						IChatroomAdapter sendingAdpt = (IChatroomAdapter) params[0];
 						try {
 							DataPacket<? extends IChatMessage>	cmdMsg = sendingAdpt.sendChatroomMessage(
-									new DataPacket<IRequestCmdMessage>(
-											IRequestCmdMessage.class,
-											new RequestCmdMessage(index)),
-											adapterToMe);
-							ISendCmdMessage sendCmdMsg = (ISendCmdMessage) cmdMsg
-									.getData();
+									new DataPacket<IRequestCmdMessage>(IRequestCmdMessage.class,
+											new RequestCmdMessage(index)), adapterToMe);
+							ISendCmdMessage sendCmdMsg = (ISendCmdMessage) cmdMsg.getData();
 							ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, ?, IChatroomAdapter> cmd = sendCmdMsg
 									.getCmd();
 							System.out.println("Setting local cmd adapter");
@@ -299,8 +325,76 @@ public class Chatroom implements IChatroom {
 		
 		chatVisitor.setCmd(IUnknownTest.class, new UnknownTestCmd(cmdAdapter));
 		chatVisitor.setCmd(IStartGame.class, new StartGameCmd(cmdAdapter));
+		chatVisitor.setCmd(RemovePokemon.class, new RemovePokemonCmd(cmdAdapter));
+		chatVisitor.setCmd(AddScore.class, new AddScoreCmd(cmdAdapter));
+		chatVisitor.setCmd(IRequestRemovePokemon.class, 
+					new ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, IRequestRemovePokemon, IChatroomAdapter>() {
+						private static final long serialVersionUID = 361377945231880991L;
+			
+						@Override
+						public DataPacket<? extends IChatMessage> apply(Class<?> index,
+								DataPacket<IRequestRemovePokemon> host, IChatroomAdapter... params) {
+							IRequestRemovePokemon request = (IRequestRemovePokemon) host
+									.getData();
+							System.out.println("wo men you mei you dao zhe li a");
+							IChatroomAdapter thisUser = params[0];
+							Position posToRemove = request.getPosToRemove();
+							//TODO: change this, extract out the UUID from startGameCmd if we are using the same UUID.
+							// Move that UUID to be set in Chatroom.java and pass in to startGameCmd as param.
+							UUID commonUUID = request.getUUID();
+							@SuppressWarnings("rawtypes")
+							MixedDataKey<Map> mk = new MixedDataKey<Map>(commonUUID,"imageMap", Map.class);
+							@SuppressWarnings("unchecked")
+							Map<Position, Renderable> imageMap = cmdAdapter.getMixedDataDictionary().get(mk);
+							if (imageMap.containsKey(posToRemove)){
+								// increment score of this user in the score board
+								if(scoreBoard.containsKey(thisUser)){
+									scoreBoard.put(thisUser, scoreBoard.get(thisUser) + 1);
+								} else {
+									scoreBoard.put(thisUser, 1);
+								}
+								AddScore addScoreMsg = new AddScore(commonUUID, scoreBoard.get(thisUser));
+								DataPacket<AddScore> addScore = new DataPacket<AddScore>(AddScore.class, addScoreMsg);
+								new Thread() {
+									public void run() {		
+										try {			
+											thisUser.sendChatroomMessage(addScore, adapterToMe);
+										} catch (RemoteException e) {
+											e.printStackTrace();
+										}
+
+									}
+								}.start();
+								// Send out delete postion msg to everyone.
+								RemovePokemon removeMsg = new RemovePokemon(posToRemove.latitude.degrees, posToRemove.longitude.degrees, commonUUID);
+								DataPacket<RemovePokemon> message = new DataPacket<RemovePokemon>(RemovePokemon.class, removeMsg);
+								for(IChatroomAdapter c: adapters){
+									new Thread() {
+										public void run() {		
+											try {			
+												System.out.println("check check, have we been RemovePokemon?");
+												c.sendChatroomMessage(message, adapterToMe);
+											} catch (RemoteException e) {
+												e.printStackTrace();
+											}
+
+										}
+									}.start();
+								}
+							} else {
+								//TODO: We do something if the pokemon is already taken.
+							}
+							return new DataPacket<INullMessage>(
+									INullMessage.class,
+									NullMessage.SINGLETON);
+						}
+			
+						@Override
+						public void setCmd2ModelAdpt(
+								ICmd2ModelAdapter cmd2ModelAdpt) {
+						}
+					});
 		
-		adapterToMe = makeAdapterToMe();
 		this.miniview = miniview;
 		adapterToMain = adapterToMe2;
 	}
@@ -497,7 +591,38 @@ public class Chatroom implements IChatroom {
 
 	@Override
 	public void sendStartGame() {
-		IStartGame message = new StartGame();
+		ArrayList<SerializedImage> images = new ArrayList<SerializedImage>();
+		File imageFolder = new File("zz23_jj26/server/image");
+		File[] listOfFiles = imageFolder.listFiles();
+		for (File file: listOfFiles){
+			if (file.isFile()){
+				BufferedImage img = null;
+				try {
+				    img = ImageIO.read(file);
+				    images.add(new SerializedImage(img));
+				} catch (IOException e) {
+					System.out.println("Read file " + file.getName() + " failed");
+				}
+			}
+		}
+		
+		
+		
+		Random rnd = new Random();
+		
+		ArrayList<RandomPosition> posList = new ArrayList<RandomPosition>();
+		
+		for (int i = 0; i < images.size(); i++){
+			double latiPos = rnd.nextInt(358) + rnd.nextDouble() * 2 - 1 - 180;
+			double longtiPos = rnd.nextInt(358) + rnd.nextDouble() * 2 - 1 - 180;
+			double offset = rnd.nextDouble();
+			posList.add(new RandomPosition(latiPos, longtiPos, offset));
+		}
+		
+		UUID useThisUUID = UUID.randomUUID();
+		System.out.println("start game message UUID " + useThisUUID);
+		IStartGame message = new StartGame(images, posList, useThisUUID);
+		
 		DataPacket<IStartGame> messagePacket = new DataPacket<IStartGame>(
 				IStartGame.class, message);
 		for (IChatroomAdapter adpt : adapters) {
@@ -512,5 +637,35 @@ public class Chatroom implements IChatroom {
 				}
 			}.start();
 		}
+		TimerTask myTimerTask = new TimerTask(){
+
+			@Override
+			public void run() {
+				HashMap<String, Integer> finalScoreBoard= new HashMap<String, Integer>();
+				for(Entry<IChatroomAdapter, Integer> en: scoreBoard.entrySet()){
+					finalScoreBoard.put(en.getKey().getUser().toString(), en.getValue());
+				}
+				GameOver message = new GameOver(finalScoreBoard);
+				DataPacket<GameOver> gameOverMsgPacket = new DataPacket<GameOver>(
+						GameOver.class, message);
+				
+				for (IChatroomAdapter adpt : adapters) {
+					new Thread() {
+						public void run() {
+							try {
+								adpt.sendChatroomMessage(gameOverMsgPacket, adapterToMe);
+							} catch (RemoteException e) {
+								e.printStackTrace();
+							}
+						}
+					}.start();
+				}
+			}
+			
+		};
+		Timer myTimer = new Timer();
+		myTimer.schedule(myTimerTask, 5000L);
 	}
+	
+	
 }
