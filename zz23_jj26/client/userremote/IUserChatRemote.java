@@ -20,7 +20,7 @@ public interface IUserChatRemote extends Remote, Serializable{
 	 * @param message -Message to send
 	 * @param sendingAdpt -Adapter that sent the message
 	 * @return The response (in a datapacket)
-	 * @throws RemoteException
+	 * @throws RemoteException remoteException
 	 */
 	public DataPacket<? extends IChatMessage> sendMessage(DataPacket<? extends IChatMessage> message, IChatroomAdapter sendingAdpt) throws RemoteException;
 }

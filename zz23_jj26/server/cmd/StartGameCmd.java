@@ -53,15 +53,10 @@ public class StartGameCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatM
 	 */
 	private transient ICmd2ModelAdapter cmdAdpt;
 	
-	/**
-	 * Server's chatroom adapter
-	 */
-	private IChatroomAdapter adapterToChatroom;
 	
 	/**
-	 * 
-	 * @param cmdAdpt
-	 * @param adapterToMe
+	 * Constructor of StartGameCmd
+	 * @param cmdAdpt the user's command to model adapter
 	 */
 	public StartGameCmd(ICmd2ModelAdapter cmdAdpt) {
 		this.cmdAdpt = cmdAdpt;
@@ -70,8 +65,11 @@ public class StartGameCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatM
 	@Override
 	public DataPacket<? extends IChatMessage> apply(Class<?> index,
 			DataPacket<IStartGame> host, IChatroomAdapter... params) {
+		// Get images from the message
 		ArrayList<BufferedImage> images = host.getData().getImages();	
+		// Get positions for each image from the message
 		ArrayList<RandomPosition> positions = host.getData().getPositions();
+		// Get RequestRemovePokemon message from start game msg, and put it into MMD
 		IRequestRemovePokemon removeMsg = host.getData().getRemovePokemonMessage();
 		UUID key = host.getData().getUUID();
 		MixedDataKey<IRequestRemovePokemon> removeKey = new MixedDataKey<IRequestRemovePokemon>(
@@ -89,24 +87,24 @@ public class StartGameCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatM
 		        		RandomPosition pos = positions.get(i);
 		        		BufferedImage img = images.get(i);
 		        		SurfaceImage si = new SurfaceImage(img, new ArrayList<LatLon>(Arrays.asList(
-		                        LatLon.fromDegrees(pos.getLatitude(), pos.getLongtitude()),
-		                        LatLon.fromDegrees(pos.getLatitude(), pos.getLongtitude() + pos.getOffset()),
-		                        LatLon.fromDegrees(pos.getLatitude() + pos.getOffset(), pos.getLongtitude() + pos.getOffset()),
-		                        LatLon.fromDegrees(pos.getLatitude() + pos.getOffset(), pos.getLongtitude())
+		                        LatLon.fromDegrees(pos.getLatitude(), pos.getLongitude()),
+		                        LatLon.fromDegrees(pos.getLatitude(), pos.getLongitude() + pos.getOffset()),
+		                        LatLon.fromDegrees(pos.getLatitude() + pos.getOffset(), pos.getLongitude() + pos.getOffset()),
+		                        LatLon.fromDegrees(pos.getLatitude() + pos.getOffset(), pos.getLongitude())
 		                    )));
 		        		imageMap.put(si.getReferencePosition(), si);
 		        	}
 		        	
 		        	// Start game frame
-			    	String appName = "Game frame";
+			    	String appName = "Pokemon Hunter";
 
 			        if (Configuration.isMacOS()){
 			            System.setProperty("com.apple.mrj.application.apple.menu.about.name", appName);
 			        }
-                    DeepPicking dp = new DeepPicking(imageMap, params[0], cmdAdpt, key, dict, host.getData().getTeams());
+                    DeepPicking dp = new DeepPicking(imageMap, params[0], cmdAdpt, key, host.getData().getTeams());
 			        AppFrame frame = dp.createAppFrame();
 		            frame.setTitle(appName);
-		            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		            
 		            java.awt.EventQueue.invokeLater(new Runnable()
 		            {

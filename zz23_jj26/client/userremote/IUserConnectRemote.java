@@ -20,7 +20,7 @@ public interface IUserConnectRemote extends Remote, Serializable{
 	 * @param message - IconnectMessage to be sent
 	 * @param sendingUser -User that sent the message
 	 * @return - The IConnectMessage response. (in a datapacket).
-	 * @throws RemoteException
+	 * @throws RemoteException	remoteException
 	 */
 	public DataPacket<? extends IConnectMessage> sendMessage(DataPacket<? extends IConnectMessage> message, IUser sendingUser) throws RemoteException;
 }

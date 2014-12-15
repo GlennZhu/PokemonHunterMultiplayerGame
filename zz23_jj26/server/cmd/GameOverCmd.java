@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import provided.datapacket.ADataPacketAlgoCmd;
 import provided.datapacket.DataPacket;
@@ -18,14 +19,27 @@ import common.message.INullMessage;
 import common.message.NullMessage;
 import common.message.chat.IChatMessage;
 
+/**
+ * This is the command for handling game over message
+ * @author Jiafang Jiang, Wei Zeng, Ziliang Zhu
+ *
+ */
 public class GameOverCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, GameOver, IChatroomAdapter> {
 
+	/**
+	 * Generated UID
+	 */
 	private static final long serialVersionUID = -2573824494797367957L;
+	
 	/**
 	 * A adapter to the model that is not passed
 	 */
 	private transient ICmd2ModelAdapter cmdAdpt;
 		
+	/**
+	 * Constructor of GameOver cmd
+	 * @param cmdAdpt the user's command to model adapter
+	 */
 	public GameOverCmd(ICmd2ModelAdapter cmdAdpt) {
 		this.cmdAdpt = cmdAdpt;
 	}
@@ -37,11 +51,12 @@ public class GameOverCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMe
 		HashMap<String, Integer> scoreBoard = host.getData().getScoreBoard();
 		String winner = host.getData().getWinningTeam();
 		
+		// Generate a new score board panel for displaying game over message
 	    JPanel panel = new JPanel();
 	    
 		GridBagLayout gbl_panel = new GridBagLayout();
 		gbl_panel.columnWidths = new int[]{50, 70, 5, 0};
-		gbl_panel.rowHeights = new int[]{16, 0, 0};
+		gbl_panel.rowHeights = new int[]{16, 0, 0, 0};
 		gbl_panel.columnWeights = new double[]{0.0, 0.0, 0.0, Double.MIN_VALUE};
 		gbl_panel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
 		panel.setLayout(gbl_panel);
@@ -66,7 +81,7 @@ public class GameOverCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMe
 		
 		JLabel lblScoreBoard = new JLabel("Score Board");
 		GridBagConstraints gbc_lblScoreBoard = new GridBagConstraints();
-		gbc_lblScoreBoard.insets = new Insets(0, 0, 5, 0);
+		gbc_lblScoreBoard.insets = new Insets(0, 0, 5, 5);
 		gbc_lblScoreBoard.anchor = GridBagConstraints.NORTH;
 		gbc_lblScoreBoard.gridx = 2;
 		gbc_lblScoreBoard.gridy = 2;
@@ -78,7 +93,7 @@ public class GameOverCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMe
 		for (Entry<String, Integer> entry: scoreBoard.entrySet()){
 			JLabel lblTeamName = new JLabel(entry.getKey());
 			GridBagConstraints gbc_lblTeamName = new GridBagConstraints();
-			gbc_lblTeamName.insets = new Insets(0, 0, 5, 5);
+			gbc_lblTeamName.insets = new Insets(0, 0, 5, 0);
 			gbc_lblTeamName.anchor = GridBagConstraints.CENTER;
 			gbc_lblTeamName.gridx = 1;
 			gbc_lblTeamName.gridy = i;
@@ -86,7 +101,7 @@ public class GameOverCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMe
 			
 			JLabel lblTeamScore = new JLabel(Integer.toString(entry.getValue()));
 			GridBagConstraints gbc_lblTeamScore = new GridBagConstraints();
-			gbc_lblTeamScore.insets = new Insets(0, 0, 5, 5);
+			gbc_lblTeamScore.insets = new Insets(0, 0, 0, 5);
 			gbc_lblTeamScore.anchor = GridBagConstraints.CENTER;
 			gbc_lblTeamScore.gridx = 3;
 			gbc_lblTeamScore.gridy = i;
@@ -95,7 +110,20 @@ public class GameOverCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMe
 			i++;
 		}
 		
-		cmdAdpt.addComponentAsWindow(panel, "Score-Board");
+		// Worker thread
+		SwingUtilities.invokeLater(new Runnable() {  // Put this Runnable on the GUI event thread
+		    public void run() {
+		        try
+		        {
+		        	// add a new window to the client
+		    		cmdAdpt.addComponentAsWindow(panel, "Score-Board");
+		        }
+		        catch (Exception e)
+		        {
+		            e.printStackTrace();
+		        }
+		    }
+		});
 		
 		
 		return new DataPacket<INullMessage>( INullMessage.class, NullMessage.SINGLETON);

@@ -30,7 +30,7 @@ import gov.nasa.worldwind.render.WWTexture;
 
 /**
  * Renders a single image contained in a local file, a remote file, or a <code>BufferedImage</code>.
- * <p/>
+ * 
  * Note: The view input handlers detect the surface image rather than the terrain as the top picked object in {@link
  * gov.nasa.worldwind.event.SelectEvent}s and will not respond to the user's attempts at navigation when the cursor is
  * over the image. If this is not the desired behavior, disable picking for the layer containing the surface image.
@@ -72,6 +72,7 @@ public class SurfaceImage extends WWObjectImpl
      *
      * @param imageSource either the file path to a local image or a <code>BufferedImage</code> reference.
      * @param sector      the sector covered by the image.
+     * @param id		  UUID
      */
     public SurfaceImage(Object imageSource, Sector sector, UUID id)
     {
@@ -433,7 +434,7 @@ public class SurfaceImage extends WWObjectImpl
     /**
      * Export the Surface Image. The {@code output} object will receive the exported data. The type of this object
      * depends on the export format. The formats and object types supported by this class are:
-     * <p/>
+     * 
      * <pre>
      * Format                                         Supported output object types
      * ================================================================================

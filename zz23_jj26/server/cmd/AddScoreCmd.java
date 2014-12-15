@@ -15,6 +15,11 @@ import common.message.INullMessage;
 import common.message.NullMessage;
 import common.message.chat.IChatMessage;
 
+/**
+ * Each client will update their current score according to this command
+ * @author Jiafang Jiang, Ziliang Zhu, Wei Zeng
+ *
+ */
 public class AddScoreCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, AddScore, IChatroomAdapter> {
 
 	/**
@@ -27,6 +32,10 @@ public class AddScoreCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMe
 	 */
 	private transient ICmd2ModelAdapter cmdAdpt;
 		
+	/**
+	 * Constructor of AddScoreCmd
+	 * @param cmdAdpt Command to model adapter
+	 */
 	public AddScoreCmd(ICmd2ModelAdapter cmdAdpt) {
 		this.cmdAdpt = cmdAdpt;
 	}
@@ -39,8 +48,9 @@ public class AddScoreCmd extends ADataPacketAlgoCmd<DataPacket<? extends IChatMe
 		int score = host.getData().getScore();
 		IMixedDataDictionary dict = cmdAdpt.getMixedDataDictionary();
 		MixedDataKey<JLabel> keyToScoreLabel = new MixedDataKey<JLabel>(commonUUID, "score", JLabel.class);
+		
+		// Client will retrive their score label from MDD and update it
 		JLabel scoreLabel = dict.get(keyToScoreLabel);
-		System.out.println(cmdAdpt.getChatroomAdapter().getUser().toString() + " " + scoreLabel.toString());
 		scoreLabel.setText(Integer.toString(score));
 		
 		return new DataPacket<INullMessage>(

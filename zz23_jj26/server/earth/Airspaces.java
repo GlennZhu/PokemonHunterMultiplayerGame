@@ -6,18 +6,14 @@
 package zz23_jj26.server.earth;
 
 import gov.nasa.worldwind.*;
-import gov.nasa.worldwind.avlist.AVKey;
 import gov.nasa.worldwind.event.*;
 import gov.nasa.worldwind.geom.*;
-import gov.nasa.worldwind.layers.AirspaceLayer;
 import gov.nasa.worldwind.layers.RenderableLayer;
-import gov.nasa.worldwind.pick.PickedObjectList;
 import gov.nasa.worldwind.render.*;
 import gov.nasa.worldwind.render.airspaces.*;
 import gov.nasa.worldwind.render.airspaces.Box;
 import gov.nasa.worldwind.render.airspaces.Polygon;
 import gov.nasa.worldwind.util.*;
-import gov.nasa.worldwind.view.orbit.BasicOrbitView;
 import gov.nasa.worldwindx.examples.Airspaces.AirspacesPanel;
 import gov.nasa.worldwindx.examples.ApplicationTemplate;
 import gov.nasa.worldwindx.examples.FlatWorldPanel;
@@ -26,7 +22,6 @@ import javax.swing.*;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -35,7 +30,7 @@ import java.util.Map.Entry;
  * extruded 3D volumes defined by geographic coordinates and upper- and lower- altitude boundaries. The interior of
  * airspace shapes always conforms to the curvature of the globe, and optionally also conform to the underlying
  * terrain.
- * <p/>
+ * 
  * This shows how to use all 11 types of standard airspace shapes: <ul> <li><code>{@link Orbit}</code> - a rectangle
  * with rounded end caps.</li> <li><code>{@link Curtain}</code> - a vertically extruded wall.</li> <li><code>{@link
  * Polygon}</code> - a vertically extruded polygon.</li> <li><code>{@link PolyArc}</code> - a vertically extruded
@@ -53,17 +48,7 @@ import java.util.Map.Entry;
  */
 public class Airspaces extends ApplicationTemplate{
 	
-    public static final String ACTION_COMMAND_ANTIALIAS = "gov.nasa.worldwind.avkey.ActionCommandAntialias";
-    public static final String ACTION_COMMAND_DEPTH_OFFSET = "gov.nasa.worldwind.avkey.ActionCommandDepthOffset";
-    public static final String ACTION_COMMAND_DRAW_EXTENT = "gov.nasa.worldwind.avkey.ActionCommandDrawExtent";
-    public static final String ACTION_COMMAND_DRAW_WIREFRAME = "gov.nasa.worldwind.avkey.ActionCommandDrawWireframe";
-    public static final String ACTION_COMMAND_LOAD_DATELINE_CROSSING_AIRSPACES
-        = "ActionCommandLoadDatelineCrossingAirspaces";
     public static final String ACTION_COMMAND_LOAD_DEMO_AIRSPACES = "ActionCommandLoadDemoAirspaces";
-    public static final String ACTION_COMMAND_LOAD_INTERSECTING_AIRSPACES = "ActionCommandLoadIntersectingAirspaces";
-    public static final String ACTION_COMMAND_ZOOM_TO_DEMO_AIRSPACES = "ActionCommandZoomToDemoAirspaces";
-    public static final String ACTION_COMMAND_SAVE_AIRSPACES = "ActionCommandSaveAirspaces";
-    public static final String ACTION_COMMAND_READ_AIRSPACES = "ActionCommandReadAirspaces";
 
     public static class AppFrame extends ApplicationTemplate.AppFrame{
     	
@@ -76,7 +61,7 @@ public class Airspaces extends ApplicationTemplate{
         public AppFrame(){
             this.controller = new AirspacesController(this);
             this.controller.actionPerformed(new ActionEvent(this, 0, ACTION_COMMAND_LOAD_DEMO_AIRSPACES));
-            // Add the scroll bar and name panel to a titled panel that will resize with the main window.
+            // Add status panel to the west of the window
             this.remove(layerPanel);
             statusPanel = new JPanel();
             statusPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -87,10 +72,8 @@ public class Airspaces extends ApplicationTemplate{
     		gbl_statusPanel.columnWeights = new double[]{1.0, Double.MIN_VALUE};
     		gbl_statusPanel.rowWeights = new double[]{0.0, 0.0, 1.0, Double.MIN_VALUE};
     		statusPanel.setLayout(gbl_statusPanel);
-//    		statusPanel.add(pnlWest);
             this.getContentPane().add(statusPanel, BorderLayout.WEST);
             this.pack();
-           
         }
     }
 
@@ -98,29 +81,17 @@ public class Airspaces extends ApplicationTemplate{
     	
         protected AppFrame frame;
         // World Wind stuff.
-        protected AirspaceLayer aglAirspaces;
-        protected AirspaceLayer amslAirspaces;
         protected RenderableLayer imageLayer;
         protected Airspace lastHighlit;
         protected AirspaceAttributes lastAttrs;
         protected Annotation lastAnnotation;
-        protected Map<Position, Renderable> images;
 
 
         public AirspacesController(AppFrame appFrame)
         {
             this.frame = appFrame;
-//            this.images = images;
-            // Construct a layer that will hold the airspaces and annotations.
-            this.aglAirspaces = new AirspaceLayer();
-            this.amslAirspaces = new AirspaceLayer();
+            // Construct a layer that will hold pokemon images.
             this.imageLayer = new RenderableLayer();
-            this.aglAirspaces.setName("AGL Airspaces");
-            this.amslAirspaces.setName("AMSL Airspaces");
-            this.aglAirspaces.setEnableBatchPicking(false);
-            this.amslAirspaces.setEnableBatchPicking(false);
-            insertBeforePlacenames(this.frame.getWwd(), this.aglAirspaces);
-            insertBeforePlacenames(this.frame.getWwd(), this.amslAirspaces);
             imageLayer.setPickEnabled(true);
             insertBeforePlacenames(this.frame.getWwd(), this.imageLayer);
 
@@ -138,42 +109,9 @@ public class Airspaces extends ApplicationTemplate{
             {
                 this.doLoadDemoAirspaces();
             }
-            else if (ACTION_COMMAND_LOAD_DATELINE_CROSSING_AIRSPACES.equalsIgnoreCase(e.getActionCommand()))
-            {
-                this.doLoadDatelineCrossingAirspaces();
-            }
-           
-            else if (ACTION_COMMAND_ANTIALIAS.equalsIgnoreCase(e.getActionCommand()))
-            {
-                JCheckBox cb = (JCheckBox) e.getSource();
-                this.aglAirspaces.setEnableAntialiasing(cb.isSelected());
-                this.amslAirspaces.setEnableAntialiasing(cb.isSelected());
-                this.getWwd().redraw();
-            }
-            else if (ACTION_COMMAND_DEPTH_OFFSET.equalsIgnoreCase(e.getActionCommand()))
-            {
-                JCheckBox cb = (JCheckBox) e.getSource();
-                this.aglAirspaces.setEnableDepthOffset(cb.isSelected());
-                this.amslAirspaces.setEnableDepthOffset(cb.isSelected());
-                this.getWwd().redraw();
-            }
-            else if (ACTION_COMMAND_DRAW_WIREFRAME.equalsIgnoreCase(e.getActionCommand()))
-            {
-                JCheckBox cb = (JCheckBox) e.getSource();
-                this.aglAirspaces.setDrawWireframe(cb.isSelected());
-                this.amslAirspaces.setDrawWireframe(cb.isSelected());
-                this.getWwd().redraw();
-            }
-            else if (ACTION_COMMAND_DRAW_EXTENT.equalsIgnoreCase(e.getActionCommand()))
-            {
-                JCheckBox cb = (JCheckBox) e.getSource();
-                this.aglAirspaces.setDrawExtents(cb.isSelected());
-                this.amslAirspaces.setDrawExtents(cb.isSelected());
-                this.getWwd().redraw();
-            }
         }
+        
         public void setSurfaceImages(Map<Position, Renderable> imageMap){
-        	System.out.println("have we been here?");
         	this.imageLayer.removeAllRenderables();
         	if (imageMap != null) {
         		for (Entry<Position, Renderable> imageEntry: imageMap.entrySet()){
@@ -181,33 +119,7 @@ public class Airspaces extends ApplicationTemplate{
         		}
         	}
         }
-        public void setAirspaces(Collection<Airspace> airspaces)
-        {
-            this.aglAirspaces.removeAllAirspaces();
-            this.amslAirspaces.removeAllAirspaces();
-
-            if (airspaces != null)
-            {
-                for (Airspace a : airspaces)
-                {
-                    if (a == null)
-                        continue;
-
-                    if (a.getAltitudeDatum()[0].equals(AVKey.ABOVE_MEAN_SEA_LEVEL) &&
-                        a.getAltitudeDatum()[1].equals(AVKey.ABOVE_MEAN_SEA_LEVEL))
-                    {
-                        this.amslAirspaces.addAirspace(a);
-                    }
-                    else
-                    {
-                        this.aglAirspaces.addAirspace(a);
-                    }
-                }
-            }
-
-            this.getWwd().redraw();
-        }
-
+        
         public void initializeSelectionMonitoring()
         {
             this.getWwd().addSelectListener(new SelectListener()
@@ -260,58 +172,8 @@ public class Airspaces extends ApplicationTemplate{
             a.getAttributes().setOutlineWidth(3.0);
         }
 
-        public void doLoadDatelineCrossingAirspaces()
-        {
-            ArrayList<Airspace> airspaces = new ArrayList<Airspace>();
-
-            // Curtains of different path types crossing the dateline.
-            Curtain curtain = new Curtain();
-            curtain.setLocations(Arrays.asList(LatLon.fromDegrees(27.0, -112.0), LatLon.fromDegrees(35.0, 138.0)));
-            curtain.setAltitudes(1000.0, 100000.0);
-            curtain.setTerrainConforming(false, false);
-            curtain.setValue(AVKey.DISPLAY_NAME, "Great arc Curtain from America to Japan.");
-            this.setupDefaultMaterial(curtain, Color.MAGENTA);
-            airspaces.add(curtain);
-
-            curtain = new Curtain();
-            curtain.setLocations(Arrays.asList(LatLon.fromDegrees(27.0, -112.0), LatLon.fromDegrees(35.0, 138.0)));
-            curtain.setPathType(AVKey.RHUMB_LINE);
-            curtain.setAltitudes(1000.0, 100000.0);
-            curtain.setTerrainConforming(false, false);
-            curtain.setValue(AVKey.DISPLAY_NAME, "Rhumb Curtain from America to Japan.");
-            this.setupDefaultMaterial(curtain, Color.CYAN);
-            airspaces.add(curtain);
-
-            // Continent sized sphere
-            SphereAirspace sphere = new SphereAirspace();
-            sphere.setLocation(LatLon.fromDegrees(0.0, -180.0));
-            sphere.setAltitude(0.0);
-            sphere.setTerrainConforming(false);
-            sphere.setRadius(1000000.0);
-            this.setupDefaultMaterial(sphere, Color.RED);
-            airspaces.add(sphere);
-
-            this.setAirspaces(airspaces);
-        }
-
         public void doLoadDemoAirspaces()
         {      	
-//        	try
-//            {
-//                imageLayer = new RenderableLayer();
-//                imageLayer.setName("Surface Images");
-//                imageLayer.setPickEnabled(false);
-//        		for (SurfaceImage image: images){
-//        			imageLayer.addRenderable(image);
-//        		}
-//        		imageLayer.setPickEnabled(true);
-//                insertBeforeCompass(this.getWwd(), imageLayer);
-//                this.getWwd().redraw();
-//            }
-//            catch (Exception e)
-//            {
-//                e.printStackTrace();
-//            }
         }
     }
 

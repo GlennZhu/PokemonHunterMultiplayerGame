@@ -27,5 +27,4 @@ public interface IMiniViewToModelAdpt {
 	public void sendSmilie();
 
 
-	public void sendStartGame();
 }

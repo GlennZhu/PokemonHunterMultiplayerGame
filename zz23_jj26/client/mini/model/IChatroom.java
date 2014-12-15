@@ -55,7 +55,6 @@ public interface IChatroom extends Serializable{
 	 */
 	public void sendSmilie();
 	
-	public void sendStartGame();
 	
 	
 }

@@ -66,10 +66,6 @@ public class MiniController {
 				
 			}
 
-			@Override
-			public void sendStartGame() {
-				miniModel.sendStartGame();
-			}
 		}, toJoin.toString());
 	}
 
@@ -83,7 +79,7 @@ public class MiniController {
 
 	/**
 	 * Get the model of the chatroom
-	 * @return
+	 * @return	chatroom model
 	 */
 	public IChatroom getModel() {
 		return miniModel;

@@ -6,7 +6,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.JButton;
 
@@ -411,17 +410,18 @@ public class ClientGUI extends JFrame {
 	 * @return - true if accept. False otherwise.
 	 */
 	public boolean respondToRoomRequest(String room, String name) {
-		Object[] options = {"Accept",
-                "Decline"};
-		int n = JOptionPane.showOptionDialog(this,
-			    name + " has requested to join room " + room,
-			    "Room Join Request",
-			    JOptionPane.YES_NO_OPTION,
-			    JOptionPane.QUESTION_MESSAGE,
-			    null,
-			    options,
-			    options[0]);
-		return n == 0;
+//		Object[] options = {"Accept",
+//                "Decline"};
+//		int n = JOptionPane.showOptionDialog(this,
+//			    name + " has requested to join room " + room,
+//			    "Room Join Request",
+//			    JOptionPane.YES_NO_OPTION,
+//			    JOptionPane.QUESTION_MESSAGE,
+//			    null,
+//			    options,
+//			    options[0]);
+//		return n == 0;
+		return true;
 	}
 
 	/**
@@ -433,24 +433,25 @@ public class ClientGUI extends JFrame {
 		cbbConnectedUsers.setSelectedIndex(cbbConnectedUsers.getItemCount() -1);
 	}
 
-	/**
-	 * Respond to a room request with a option box
-	 * @param room - name of the room
-	 * @param name - name of the user that you want to invite
-	 * @return - true if accept. False otherwise.
-	 */
+/**
+ * No-op
+ * @param chatroomID	room ID
+ * @param iUser			User	
+ * @return	boolean
+ */
 	public boolean sendInvitePrompt(IChatroomID chatroomID, IUser iUser) {
-		Object[] options = {"Accept",
-        "Decline"};
-		int n = JOptionPane.showOptionDialog(this,
-			    iUser.toString() + " invited you to join room " + chatroomID,
-			    "Room Join Invite",
-			    JOptionPane.YES_NO_OPTION,
-			    JOptionPane.QUESTION_MESSAGE,
-			    null,
-			    options,
-			    options[0]);
-		return n == 0;
+//		Object[] options = {"Accept",
+//        "Decline"};
+//		int n = JOptionPane.showOptionDialog(this,
+//			    iUser.toString() + " invited you to join room " + chatroomID,
+//			    "Room Join Invite",
+//			    JOptionPane.YES_NO_OPTION,
+//			    JOptionPane.QUESTION_MESSAGE,
+//			    null,
+//			    options,
+//			    options[0]);
+//		return n == 0;
+		return true;
 	}
 
 	/** 

@@ -37,31 +37,69 @@ import zz23_jj26.server.message.game.IRequestRemovePokemon;
  * Illustrates how to cause all elements under the cursor in a WorldWindow to be reported in <code>{@link
  * SelectEvent}s</code>. This prints all elements under the cursor to the console in response to a <code>HOVER</code>
  * SelectEvent.
- * <p/>
+ * 
  * In order to enable deep picking, any batch picking for the desired elements must be disabled and the
  * SceneController's deep picking property must be enabled. See <code>{@link gov.nasa.worldwind.SceneController#setDeepPickEnabled(boolean)}</code>.
  *
- * @author tag
+ * @author WorldWind, Jiafang Jiang, Ziliang Zhu, Wei Zeng
  * @version $Id: DeepPicking.java 1171 2013-02-11 21:45:02Z dcollins $
  */
 public class DeepPicking extends Airspaces
 {
+	/**
+	 * A Mapping of images to their positions
+	 */
+	private Map<Position, Renderable> imageMap;
 	
-	protected Map<Position, Renderable> imageMap;
-	protected IChatroomAdapter server;
-	protected ICmd2ModelAdapter cmd2modelAdpt;
-	protected UUID keyUID;
-	protected IMixedDataDictionary mixedDict;
-	protected MixedDataKey<RenderableLayer> layerKey;
-	protected HashMap<String, ArrayList<IChatroomAdapter>> teamsMap;
+	/**
+	 * Chatroom Adapter of the server
+	 */
+	private IChatroomAdapter server;
+	
+	/**
+	 * Client's command to model adapter
+	 */
+	private ICmd2ModelAdapter cmd2modelAdpt;
+	
+	/**
+	 * Common UUID for generating MixedDataKey
+	 */
+	private UUID keyUID;
+	
+	/**
+	 * Mixed Data Dictionary of the user
+	 */
+	private IMixedDataDictionary mixedDict;
+	
+	/**
+	 * The Mixed Data Key for the image layer
+	 */
+	private MixedDataKey<RenderableLayer> layerKey;
+	
+	/**
+	 * The map storing the name of the team and its members
+	 */
+	private HashMap<String, ArrayList<IChatroomAdapter>> teamsMap;
+	
+	/**
+	 * The lable for displaying each user's score
+	 */
 	private transient JLabel lblScore;
 	
-	public DeepPicking(Map<Position, Renderable> imageMap, IChatroomAdapter server, ICmd2ModelAdapter cmd2modelAdpt, UUID keyUID, IMixedDataDictionary dict, HashMap<String, ArrayList<IChatroomAdapter>> teamsMap) {
+	/**
+	 * Constructor of DeepPicking behavior class
+	 * @param imageMap A Mapping of images to their positions
+	 * @param server Chatroom Adapter of the server
+	 * @param cmd2modelAdpt Client's command to model adapter
+	 * @param keyUID Common UUID for generating MixedDataKey
+	 * @param teamsMap The map storing the name of the team and its members
+	 */
+	public DeepPicking(Map<Position, Renderable> imageMap, IChatroomAdapter server, ICmd2ModelAdapter cmd2modelAdpt, UUID keyUID, HashMap<String, ArrayList<IChatroomAdapter>> teamsMap) {
 		this.imageMap = imageMap;
 		this.server = server;
 		this.cmd2modelAdpt = cmd2modelAdpt;
 		this.keyUID = keyUID;
-		this.mixedDict = dict;
+		this.mixedDict = cmd2modelAdpt.getMixedDataDictionary();
 		this.teamsMap = teamsMap;
         this.layerKey = new MixedDataKey<RenderableLayer>(keyUID, "ImageLayer", RenderableLayer.class);
 	}
@@ -72,9 +110,7 @@ public class DeepPicking extends Airspaces
 
 		public AppFrame()
         {
-            // Prohibit batch picking for the airspaces.
-            this.controller.aglAirspaces.setEnableBatchPicking(false);
-            this.controller.amslAirspaces.setEnableBatchPicking(false);
+			// Create new panel for displaying game status
             JPanel pnlStatus = new JPanel();
             pnlStatus.setBorder(BorderFactory.createTitledBorder("Game Status"));
             JLabel lblInfo = new JLabel("My Score: ");
@@ -88,7 +124,7 @@ public class DeepPicking extends Airspaces
     		gbc_pnlStatus.gridy = 1;
             this.statusPanel.add(pnlStatus, gbc_pnlStatus);
             
-            
+            // A panel for displaying team member
             JPanel pnlTeam = new JPanel();
             String teamName = "";
             ArrayList<IUser> teamMembers = new ArrayList<IUser>();
@@ -98,7 +134,6 @@ public class DeepPicking extends Airspaces
             		teamMembers.add(adpt.getUser());
             	}
             }
-           
             
             pnlTeam.setBorder(BorderFactory.createTitledBorder(teamName));
     		GridBagLayout gbl_pnlTeamLayout = new GridBagLayout();
@@ -123,21 +158,17 @@ public class DeepPicking extends Airspaces
     		gbc_pnlTeam.gridy = 2;
     		this.statusPanel.add(pnlTeam, gbc_pnlTeam);
             
+    		// put the score lable into MMD
             MixedDataKey<JLabel> keyToScoreLabel = new MixedDataKey<JLabel>(keyUID, "score", JLabel.class);
             mixedDict.put(keyToScoreLabel, lblScore);
-            System.out.println(cmd2modelAdpt.getChatroomAdapter().getUser().toString() + " " + lblScore.toString());
                     
-            //TODO: to figure out how to deal with deleting images
             IMixedDataDictionary dict = cmd2modelAdpt.getMixedDataDictionary();
             dict.put(layerKey, this.controller.imageLayer);
             @SuppressWarnings("rawtypes")
 			MixedDataKey<Map> keyToImageMap = new MixedDataKey<Map>(keyUID, "imageMap", Map.class);
             mixedDict.put(keyToImageMap, imageMap);
             
-
-//            
             this.controller.setSurfaceImages(imageMap);
-
             // Tell the scene controller to perform deep picking.
             this.controller.getWwd().getSceneController().setDeepPickEnabled(true);
             // Register a select listener to print the class names of the items under the cursor.
@@ -147,7 +178,6 @@ public class DeepPicking extends Airspaces
                 {
                     if (event.getEventAction().equals(SelectEvent.HOVER) && event.getObjects() != null)
                     {
-                        System.out.printf("%d objects\n", event.getObjects().size());
                         if (event.getObjects().size() > 1)
                         {
                             for (PickedObject po : event.getObjects())
@@ -158,13 +188,13 @@ public class DeepPicking extends Airspaces
                        
                                 		MixedDataKey<IRequestRemovePokemon> removeKey = new MixedDataKey<IRequestRemovePokemon>(
                                 				keyUID, "RequestRemoveMessage", IRequestRemovePokemon.class);
-                                		
                                 		IRequestRemovePokemon removeMsg = mixedDict.get(removeKey);
+                                		// Get the position of the image to be removed
                                 		double mylat = ((SurfaceImage)po.getObject()).getReferencePosition().latitude.degrees;
                                 		double mylon = ((SurfaceImage)po.getObject()).getReferencePosition().longitude.degrees;
                                 		removeMsg.setPosToRemove(mylat, mylon);
                                 		removeMsg.setUUID(keyUID);
-                                		
+                                		// Send a message to server to request to remove the pokemon
                                 		DataPacket<IRequestRemovePokemon> message = new DataPacket<IRequestRemovePokemon>(IRequestRemovePokemon.class, removeMsg);
                                 		new Thread() {
                             				public void run() {
@@ -175,13 +205,7 @@ public class DeepPicking extends Airspaces
                             					}
                             				}
                             			}.start();
-                   		
-//                                		((RenderableLayer)po.getParentLayer()).removeRenderable((SurfaceImage)po.getObject());
-                                	}
-                                	else{
-                                		System.out.println("It's type is " + po.getParentLayer().getClass().getName());
-                                	}
-                                	
+                                	}            	
                                 }
                             }
                         }
@@ -191,13 +215,12 @@ public class DeepPicking extends Airspaces
         }
     }
     
+    /**
+     * Return the new WWJ App Frame
+     * @return WWJ App frame
+     */
     public AppFrame createAppFrame(){
     	return new AppFrame();
     }
 
-    
-//    public static void main(String[] args)
-//    {
-//        start("World Wind Deep Picking", AppFrame.class);
-//    }
 }

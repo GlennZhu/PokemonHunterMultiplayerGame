@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.swing.JFrame;
+
 import provided.datapacket.ADataPacket;
 import provided.datapacket.ADataPacketAlgoCmd;
 import provided.datapacket.DataPacket;
@@ -16,12 +18,11 @@ import provided.extvisitor.AExtVisitor;
 import provided.mixedData.IMixedDataDictionary;
 import provided.mixedData.MixedDataDictionary;
 import zz23_jj26.client.engine.IRemoteTaskViewAdapter;
-import zz23_jj26.client.message.chat.IStartGame;
 import zz23_jj26.client.message.chat.IUnknownTest;
 import zz23_jj26.client.message.chat.LeaveMessage;
 import zz23_jj26.client.message.chat.RequestCmdMessage;
 import zz23_jj26.client.message.chat.SendCmdMessage;
-import zz23_jj26.client.message.chat.StartGame;
+
 import zz23_jj26.client.message.chat.TextMessage;
 import zz23_jj26.client.message.chat.UnknownTest;
 import zz23_jj26.client.userremote.IUserChatRemote;
@@ -109,10 +110,16 @@ public class Chatroom implements IChatroom {
 
 		@Override
 		public Window addComponentAsWindow(Component component, String label) {
-			zz23_jj26.popupWindow.View returnVal = new zz23_jj26.popupWindow.View();
-			component.setName(label);
-			returnVal.addComponent(component);
-			return returnVal;
+//			zz23_jj26.popupWindow.View returnVal = new zz23_jj26.popupWindow.View();
+//			component.setName(label);
+//			returnVal.addComponent(component);
+//			return returnVal;
+			JFrame frame = new JFrame(label);
+			frame.setSize(800, 600);
+			frame.getContentPane().setSize(750, 550);
+			frame.setVisible(true);
+			frame.getContentPane().add(component);
+			return frame;
 		}
 
 		@Override
@@ -149,14 +156,12 @@ public class Chatroom implements IChatroom {
 							DataPacket<? extends IChatMessage>	cmdMsg = sendingAdpt.sendChatroomMessage(
 									new DataPacket<IRequestCmdMessage>(IRequestCmdMessage.class, 
 											new RequestCmdMessage(index)), adapterToMe);
-							System.out.println("here");
 							ISendCmdMessage sendCmdMsg = (ISendCmdMessage) cmdMsg.getData();
 							ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, ?, IChatroomAdapter> cmd = sendCmdMsg
 									.getCmd();
 							System.out.println("Setting local cmd adapter");
 							cmd.setCmd2ModelAdpt(cmdAdapter);
-							chatVisitor.setCmd(sendCmdMsg.getCmdID(),
-									sendCmdMsg.getCmd());
+							chatVisitor.setCmd(sendCmdMsg.getCmdID(), sendCmdMsg.getCmd());
 						} catch (RemoteException e) {
 							e.printStackTrace();
 						}
@@ -186,6 +191,48 @@ public class Chatroom implements IChatroom {
 			private static final long serialVersionUID = 5928472004092037409L;
 		};
 
+		chatVisitor.setCmd(ISendCmdMessage.class, new ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, IChatMessage, IChatroomAdapter>() {
+			private static final long serialVersionUID = -7669098568277542189L;
+
+			@Override
+			public DataPacket<? extends IChatMessage> apply(
+					Class<?> index,
+					DataPacket<IChatMessage> host,
+					IChatroomAdapter... params) {
+				ISendCmdMessage sendCmdMsg = (ISendCmdMessage) host.getData();
+				ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, ?, IChatroomAdapter> cmd = sendCmdMsg.getCmd();
+				cmd.setCmd2ModelAdpt(cmdAdapter);
+				chatVisitor.setCmd(sendCmdMsg.getCmdID(), sendCmdMsg.getCmd());
+				return new DataPacket<INullMessage>(
+						INullMessage.class,
+						NullMessage.SINGLETON);
+			}
+
+			@Override
+			public void setCmd2ModelAdpt(
+					ICmd2ModelAdapter cmd2ModelAdpt) {
+			}
+		});
+		
+		chatVisitor.setCmd(INullMessage.class, new ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, IChatMessage, IChatroomAdapter>() {
+			private static final long serialVersionUID = 2065544413798448779L;
+
+			@Override
+			public DataPacket<? extends IChatMessage> apply(
+					Class<?> index,
+					DataPacket<IChatMessage> host,
+					IChatroomAdapter... params) {
+				return new DataPacket<INullMessage>(
+						INullMessage.class,
+						NullMessage.SINGLETON);
+			}
+
+			@Override
+			public void setCmd2ModelAdpt(
+					ICmd2ModelAdapter cmd2ModelAdpt) {
+			}
+		});
+		
 		chatVisitor
 				.setCmd(ITextMessage.class,
 						new ADataPacketAlgoCmd<DataPacket<? extends IChatMessage>, IChatMessage, IChatroomAdapter>() {
@@ -484,22 +531,4 @@ public class Chatroom implements IChatroom {
 
 	}
 
-	@Override
-	public void sendStartGame() {
-		IStartGame message = new StartGame();
-		DataPacket<IStartGame> messagePacket = new DataPacket<IStartGame>(
-				IStartGame.class, message);
-		for (IChatroomAdapter adpt : adapters) {
-			// Instantiate a thread object
-			new Thread() {
-				public void run() {
-					try {
-						adpt.sendChatroomMessage(messagePacket, adapterToMe);
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-				}
-			}.start();
-		}
-	}
 }

@@ -58,8 +58,8 @@ public class ChatRoomGui extends JFrame {
 
 	/**
 	 * Constructor of the class
-	 * @param ma the ModelAdapter 
-	 * @param roomName 
+	 * @param ma 		the ModelAdapter 
+	 * @param roomName 	room name
 	 */
 	public ChatRoomGui(IMiniViewToModelAdpt ma, String roomName) {
 		super("Client GUI");
@@ -150,11 +150,6 @@ public class ChatRoomGui extends JFrame {
 		
 		btnStartGame = new JButton("Start Game");
 		btnStartGame.setEnabled(false);
-		btnStartGame.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				model.sendStartGame();
-			}
-		});
 		panel.add(btnStartGame);
 	}
 	

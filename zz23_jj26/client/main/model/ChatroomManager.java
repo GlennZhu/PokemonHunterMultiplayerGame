@@ -37,8 +37,8 @@ import zz23_jj26.client.mini.controller.MiniController;
 import zz23_jj26.client.mini.model.ChatroomID;
 import zz23_jj26.client.mini.model.IChatroom;
 import zz23_jj26.client.mini.model.IMiniModel2MainModelAdapter;
-import zz23_jj26.client.user.UserRMIWrapper;
 import zz23_jj26.client.userremote.IUserConnectRemote;
+import zz23_jj26.client.user.User;
 
 /**
  * The main model
@@ -55,7 +55,7 @@ public class ChatroomManager{
 	/**
 	 * The stubs you hold on to 
 	 */
-	private IUserRMIWrapper meUserStub, otherUserStub;
+	private IUserRMIWrapper meUserStub, otherUserStub, meUserWrapper, wrapperExported;
 	/**
 	 * You as a user and the user you're connected to
 	 */
@@ -67,11 +67,11 @@ public class ChatroomManager{
 	/**
 	 * The thing you use to send IConnectMessages
 	 */
-	private IUserConnectRemote userConnectRemote;
+	private IUserConnectRemote stub, userConnectRemote;
 	/**
 	 * The stub that holds the other user.
 	 */
-	private IUserRMIWrapper stub;
+//	private IUserRMIWrapper stub;
 	/**
 	 * Your username
 	 */
@@ -241,25 +241,36 @@ public class ChatroomManager{
 						}
 					}, IRemoteTaskViewAdapter.BOUND_PORT_CLIENT);
 
-			IUserRMIWrapper meUserWrapper = new UserRMIWrapper(ipAddress,
-					myName, userConnectRemote);
-			meUser = meUserWrapper.getUser();
-			_model2View.append("Instantiated new IUserRMIWrapper: "
-					+ meUserWrapper + "\n");
-			stub = (IUserRMIWrapper) UnicastRemoteObject
-					.exportObject(meUserWrapper,
-							IRemoteTaskViewAdapter.BOUND_PORT_CLIENT);
-			// Use this technique rather than the simpler
-			// "registry.rebind(name, engine);"
-			// because it enables us to specify a port number so we can open
-			// that port on the firewall
-			_model2View.append("Looking for registry..." + "\n");
+//			IUserRMIWrapper meUserWrapper = new UserRMIWrapper(ipAddress,
+//					myName, userConnectRemote);
+//			meUser = meUserWrapper.getUser();
+//			_model2View.append("Instantiated new IUserRMIWrapper: "
+//					+ meUserWrapper + "\n");
+//			stub = (IUserRMIWrapper) UnicastRemoteObject
+//					.exportObject(meUserWrapper,
+//							IRemoteTaskViewAdapter.BOUND_PORT_CLIENT);
+//			// Use this technique rather than the simpler
+//			// "registry.rebind(name, engine);"
+//			// because it enables us to specify a port number so we can open
+//			// that port on the firewall
+//			_model2View.append("Looking for registry..." + "\n");
+//			registry = rmiUtils.getLocalRegistry();
+//			_model2View.append("Found registry: " + registry + "\n");
+//			registry.rebind(IUserRMIWrapper.BOUND_NAME_CLIENT, stub);
+//			_model2View.append("IUserRMIWrapper bound to "
+//					+ IUserRMIWrapper.BOUND_NAME_CLIENT + "\n");
+			stub = (IUserConnectRemote) UnicastRemoteObject.exportObject(userConnectRemote, IRemoteTaskViewAdapter.BOUND_PORT_CLIENT);
+			meUser = new User(ipAddress, myName, stub);
 			registry = rmiUtils.getLocalRegistry();
-			_model2View.append("Found registry: " + registry + "\n");
-			registry.rebind(IUserRMIWrapper.BOUND_NAME_CLIENT, stub);
-			_model2View.append("IUserRMIWrapper bound to "
-					+ IUserRMIWrapper.BOUND_NAME_CLIENT + "\n");
-
+			meUserWrapper = new IUserRMIWrapper() {
+				
+				@Override
+				public IUser getUser() throws RemoteException {
+					return meUser;
+				}
+			};
+			wrapperExported = (IUserRMIWrapper) UnicastRemoteObject.exportObject(meUserWrapper, IUserRMIWrapper.EXPORT_PORT_CLIENT);
+			registry.rebind(IUserRMIWrapper.BOUND_NAME_CLIENT, meUserWrapper);
 			// For client
 			_model2View.setRemoteHost(rmiUtils.getLocalAddress());
 		} catch (Exception e) {
